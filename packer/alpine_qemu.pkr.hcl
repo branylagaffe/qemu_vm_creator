@@ -10,7 +10,7 @@ source "qemu" "workloads_test" {
   // Disk
   vm_name           = "test"
   output_directory  = "alpine_base"
-  disk_size         = "10G"
+  disk_size         = "20G"
   format            = "qcow2"
   disk_image        = true
   disk_interface    = "virtio"
@@ -30,7 +30,8 @@ source "qemu" "workloads_test" {
     // ["-netdev", "user,id=net0,hostfwd=tcp::0-:22"],
     ["-net", "user"],
     ["-monitor", "none"],
-    ["-device", "virtio-gpu-pci"],
+    // ["-device", "virtio-gpu"]
+    // ["-device", "virtio-gpu-pci"],
     // ["-nographic"]
   ]
   shutdown_command  = "poweroff"
@@ -52,24 +53,14 @@ source "qemu" "workloads_test" {
 		"<enter>FS0:<enter>efi\\boot\\boot<tab><enter>",
     "<wait1m>",
     "root<enter><enter>",
-    "setup-keymap<enter>en<enter>gb<enter>gb<enter><wait5s>",
-    "setup-hostname<enter><wait1s><enter><wait1s>",
+
+    "setup-hostname -n localhost<enter><wait1s>",
     "setup-interfaces<enter><wait1s><enter><wait1s><enter><wait1s><enter><wait1s>",
-    "rc-service networking --quiet start &<enter><wait5s>",
-    "rc-service hostname --quiet restart<enter><wait5s>",
+    "rc-service networking --quiet start<enter><wait5s>",
 
-    "cat > /etc/apk/repositories << EOF; $(echo)<enter>",
-    "https://dl-cdn.alpinelinux.org/alpine/v$(cut -d'.' -f1,2 /etc/alpine-release)/main/<enter>",
-    "https://dl-cdn.alpinelinux.org/alpine/v$(cut -d'.' -f1,2 /etc/alpine-release)/community/<enter>",
-    "https://dl-cdn.alpinelinux.org/alpine/edge/testing/<enter>",
-    "EOF<enter><wait2s>",
-
-    "setup-sshd -c openssh<enter><wait5s>",
-    "apk update<enter><wait10s>apk upgrade<enter><wait10s>",
-    "apk add docker<enter><wait30s>",
-    "addgroup username docker<enter><wait1s>",
-    "rc-update add docker default<enter><wait5s>",
-    "service docker start<enter><wait2s>",
+    "wget http://{{ .HTTPIP }}:{{ .HTTPPort }}/setup.sh<enter><wait5s>",
+    "chmod +x setup.sh<enter>",
+    "./setup.sh<enter><wait10m>",
   ]
 
   // boot_command = [
@@ -79,8 +70,8 @@ source "qemu" "workloads_test" {
   // ]
   // headless          = "true"
 
-//   http_directory    = "path/to/httpdir"
-//   boot_command      = ["<tab> text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/centos6-ks.cfg<enter><wait>"]
+  http_directory    = "./config"
+
 }
 
 build {
