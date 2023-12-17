@@ -5,15 +5,17 @@ source "qemu" "workloads_test" {
   // OS
   iso_url           = "https://dl-cdn.alpinelinux.org/alpine/v3.18/releases/aarch64/alpine-virt-3.18.5-aarch64.iso"
   iso_checksum      = "sha256:ba72f4b3cccf3addf9babc210d44096880b78ecca9e8758fb22ce2a8055d10b6"
-  cdrom_interface   = "virtio"
+  cdrom_interface   = "virtio-scsi"
 
   // Disk
   vm_name           = "test"
   output_directory  = "alpine_base"
   disk_size         = "20G"
   format            = "qcow2"
-  disk_image        = true
-  disk_interface    = "virtio"
+  // disk_image        = false
+  // use_backing_file  = false
+  disk_interface    = "virtio" 
+  disk_compression  = true
   
   // Machine
   machine_type      = "virt"
@@ -28,13 +30,9 @@ source "qemu" "workloads_test" {
     // ["-icount","shift=0,sleep=on,align=off"],
     // ["-device", "virtio-net,netdev=net0"],
     // ["-netdev", "user,id=net0,hostfwd=tcp::0-:22"],
-    ["-net", "user"],
+    // ["-net", "user"],
     ["-monitor", "none"],
-    // ["-device", "virtio-gpu"]
-    // ["-device", "virtio-gpu-pci"],
-    // ["-nographic"]
   ]
-  shutdown_command  = "poweroff"
   
   //BOOT
   boot_wait         = "10s"
@@ -42,35 +40,51 @@ source "qemu" "workloads_test" {
   efi_firmware_vars = "./varstore.img" // need to be align on 64MB
   efi_firmware_code = "./efi.img"
   
-  // After boot
-  communicator      = "none"
-  // ssh_username      = "root"
-  // ssh_password      = ""
-  // ssh_timeout       = "2m"
-  // use_default_display = true
-  disable_vnc       = false
-  boot_command     = [
-		"<enter>FS0:<enter>efi\\boot\\boot<tab><enter>",
-    "<wait1m>",
-    "root<enter><enter>",
+  // SETUP
+  headless          = true
+  http_directory    = "./config"
+  boot_steps      = [
+		["<enter>FS0:<enter>efi\\boot\\boot<tab><enter>", "Running bootloader"],  // Optional
+    ["<wait1m>", "Waiting to boot"],                                       // Optional
+    ["root<enter><enter>", "Entering session"],
 
-    "setup-hostname -n localhost<enter><wait1s>",
-    "setup-interfaces<enter><wait1s><enter><wait1s><enter><wait1s><enter><wait1s>",
-    "rc-service networking --quiet start<enter><wait5s>",
+    // Install OS
+    ["setup-interfaces<enter><wait1s><enter><wait1s><enter><wait1s><enter><wait1s>", "Setting up network"],
+    ["rc-service networking --quiet start<enter><wait5s>", "Starting network service"],
+    ["wget http://{{ .HTTPIP }}:{{ .HTTPPort }}/setup_repo.sh<enter><wait1s>", "Download setup script"],
+    ["chmod +x *.sh<enter>", "chmod the script"],
+    ["./setup_repo.sh<enter><wait5s>", "Run the setup script"],
 
-    "wget http://{{ .HTTPIP }}:{{ .HTTPPort }}/setup.sh<enter><wait5s>",
-    "chmod +x setup.sh<enter>",
-    "./setup.sh<enter><wait10m>",
+    ["setup-disk -q -m sys /dev/vda<enter><wait30s>y<enter><wait1m30s>", "Install Alpine Linux onto disk"],
+    ["reboot<enter><wait1m30s>", "Reboot"],
+
+    // Install Package
+
+    ["root<enter><enter>", "Entering session"],
+    ["setup-hostname -n localhost<enter><wait1s>", "Setting Up Hostname"],
+    ["setup-interfaces<enter><wait1s><enter><wait1s><enter><wait1s><enter><wait1s>", "Setting up network"],
+    ["rc-service networking --quiet start<enter><wait5s>", "Starting network service"],
+    ["wget http://{{ .HTTPIP }}:{{ .HTTPPort }}/setup_repo.sh<enter><wait1s>", "Download setup script"],
+    ["wget http://{{ .HTTPIP }}:{{ .HTTPPort }}/package.sh<enter><wait1s>", "Download package script"],
+    ["wget http://{{ .HTTPIP }}:{{ .HTTPPort }}/docker.sh<enter><wait1s>", "Download docker script"],
+    ["wget http://{{ .HTTPIP }}:{{ .HTTPPort }}/authorized_keys<enter><wait1s>", "Download authorized_keys file"],
+    ["chmod +x *.sh<enter>", "chmod the script"],
+    ["./setup_repo.sh<enter><wait5s>", "Run the setup script"],
+    ["./package.sh<enter><wait2m>", "Run the package script"],
+
+    // SSH
+    ["passwd<enter>root<enter>root<enter>", "Set new password to 'root'"],
+    ["setup-sshd<enter><enter><wait5s>yes<enter><wait2s><enter><wait10s>", "Install OpenSSH server"],
+    
   ]
 
-  // boot_command = [
-  //   "<enter>",
-  //   "root<enter>",
-  //   "apk update<enter>"
-  // ]
-  // headless          = "true"
-
-  http_directory    = "./config"
+  // VALIDATION
+  communicator      = "ssh"
+  ssh_username      = "root"
+  ssh_password      = "root"
+  ssh_timeout       = "1m"
+  disable_vnc       = false
+  shutdown_command  = "poweroff"
 
 }
 

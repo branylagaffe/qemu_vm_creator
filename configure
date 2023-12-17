@@ -1,0 +1,1 @@
+./configure --target-list=aarch64-softmmu --enable-download --enable-slirp --enable-vhost-net --enable-kvm --enable-gtk --enable-pixman
