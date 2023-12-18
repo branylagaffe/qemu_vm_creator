@@ -1,20 +1,19 @@
-source "qemu" "workloads_test" {
+source "qemu" "alpine-workload" {
 
   qemu_binary       = "/usr/local/bin/qemu-system-aarch64"
+  headless          = true
+  use_default_display = true
   
   // OS
   iso_url           = "https://dl-cdn.alpinelinux.org/alpine/v3.18/releases/aarch64/alpine-virt-3.18.5-aarch64.iso"
   iso_checksum      = "sha256:ba72f4b3cccf3addf9babc210d44096880b78ecca9e8758fb22ce2a8055d10b6"
-  cdrom_interface   = "virtio-scsi"
+  // cdrom_interface   = "virtio"
 
   // Disk
-  vm_name           = "test"
-  output_directory  = "alpine_base"
+  vm_name           = "base"
   disk_size         = "20G"
   format            = "qcow2"
-  // disk_image        = false
-  // use_backing_file  = false
-  disk_interface    = "virtio" 
+  // disk_interface    = "virtio" 
   disk_compression  = true
   
   // Machine
@@ -26,12 +25,13 @@ source "qemu" "workloads_test" {
   qemuargs = [
     ["-machine", "virt,gic-version=max,virtualization=on"],
     ["-cpu", "max,pauth-impdef=on"],
+    ["-device", "qemu-xhci"],         //? These lines were added for
+    ["-device", "usb-kbd"],           //? host (linux) that do not support
+    ["-device", "bochs-display"],     //? serial0 from VNC out of the box
     // ["-rtc", "clock=vm"],
     // ["-icount","shift=0,sleep=on,align=off"],
-    // ["-device", "virtio-net,netdev=net0"],
-    // ["-netdev", "user,id=net0,hostfwd=tcp::0-:22"],
-    // ["-net", "user"],
     ["-monitor", "none"],
+    ["-parallel", "none"],
   ]
   
   //BOOT
@@ -41,11 +41,13 @@ source "qemu" "workloads_test" {
   efi_firmware_code = "./efi.img"
   
   // SETUP
-  headless          = true
   http_directory    = "./config"
-  boot_steps      = [
-		["<enter>FS0:<enter>efi\\boot\\boot<tab><enter>", "Running bootloader"],  // Optional
-    ["<wait1m>", "Waiting to boot"],                                       // Optional
+  boot_steps     = [
+     // Optional
+		["<enter>FS0:<enter>efi\\boot\\boot<tab><enter>", "Running bootloader"],
+    ["<wait1m>", "Waiting to boot"],
+
+    // Starting
     ["root<enter><enter>", "Entering session"],
 
     // Install OS
@@ -59,7 +61,6 @@ source "qemu" "workloads_test" {
     ["reboot<enter><wait1m30s>", "Reboot"],
 
     // Install Package
-
     ["root<enter><enter>", "Entering session"],
     ["setup-hostname -n localhost<enter><wait1s>", "Setting Up Hostname"],
     ["setup-interfaces<enter><wait1s><enter><wait1s><enter><wait1s><enter><wait1s>", "Setting up network"],
