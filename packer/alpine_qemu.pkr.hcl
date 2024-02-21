@@ -1,20 +1,19 @@
-source "qemu" "alpine-workload" {
+source "qemu" "alpine-workloads" {
 
   qemu_binary       = "/usr/local/bin/qemu-system-aarch64"
-  headless          = true
-  use_default_display = true
+  headless          = false // <<== DEBUG MODE HERE
+  use_default_display = false // <<== DEBUG MODE HERE
   
   // OS
   iso_url           = "https://dl-cdn.alpinelinux.org/alpine/v3.18/releases/aarch64/alpine-virt-3.18.5-aarch64.iso"
   iso_checksum      = "sha256:ba72f4b3cccf3addf9babc210d44096880b78ecca9e8758fb22ce2a8055d10b6"
-  // cdrom_interface   = "virtio"
 
   // Disk
   vm_name           = "base"
   disk_size         = "20G"
   format            = "qcow2"
-  // disk_interface    = "virtio" 
   disk_compression  = true
+  // disk_interface    = "virtio" 
   
   // Machine
   machine_type      = "virt"
@@ -28,17 +27,17 @@ source "qemu" "alpine-workload" {
     ["-device", "qemu-xhci"],         //? These lines were added for
     ["-device", "usb-kbd"],           //? host (linux) that do not support
     ["-device", "bochs-display"],     //? serial0 from VNC out of the box
-    // ["-rtc", "clock=vm"],
-    // ["-icount","shift=0,sleep=on,align=off"],
     ["-monitor", "none"],
     ["-parallel", "none"],
+    // ["-rtc", "clock=vm"],
+    // ["-icount","shift=0,sleep=on,align=off"],
   ]
   
   //BOOT
   boot_wait         = "10s"
   efi_boot          = true
-  efi_firmware_vars = "./varstore.img" // need to be align on 64MB
-  efi_firmware_code = "./efi.img"
+  efi_firmware_vars = "./varstore.img"  // need to be align on 64MB
+  efi_firmware_code = "./efi.img"       // need to be align on 64MB
   
   // SETUP
   http_directory    = "./config"
@@ -90,7 +89,7 @@ source "qemu" "alpine-workload" {
 }
 
 build {
-  sources = ["source.qemu.workloads_test"]
+  sources = ["source.qemu.alpine-workloads"]
 }
 
 packer {
