@@ -1,4 +1,4 @@
-è### QEMU Instance Creator
+### QEMU Instance Creator
 
 This repo was build to create QEMU instance in a snap
 
@@ -39,14 +39,15 @@ packer build .
 ```bash
 cd output-alpine-workloads
 
-qemu-system-aarch64 -machine virt,gic-version=max,virtualization=on \ 
-                    -smp 1 -m 4G -cpu max,pauth-impdef=on \ 
-                    -device qemu-xhci -device usb-kbd -device bochs-display \ 
-                    -parallel none \ 
-                    -drive file=../efi.img,format=raw,if=pflash \ 
-                    -drive file=./efivars.fd,if=pflash,format=raw \ 
-                    -drive file=./base.qcow2,format=qcow2,if=virtio
+qemu-system-aarch64 -machine virt,gic-version=max,virtualization=on \
+                    -smp 1 -m 4G -cpu max,pauth-impdef=on \
+                    -device qemu-xhci -device usb-kbd -device bochs-display \
+                    -monitor none -parallel none \
+                    -drive file=../efi.img,format=raw,if=pflash \
+                    -drive file=./efivars.fd,if=pflash,format=raw \
+                    -drive file=./base.qcow2,format=qcow2,if=virtio \
                     -nographic
+
 
 ```
 
