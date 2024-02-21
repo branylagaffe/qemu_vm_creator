@@ -9,7 +9,7 @@ source "qemu" "alpine-workloads" {
   iso_checksum      = "sha256:ba72f4b3cccf3addf9babc210d44096880b78ecca9e8758fb22ce2a8055d10b6"
 
   // Disk
-  vm_name           = "base"
+  vm_name           = "base.qcow2"
   disk_size         = "20G"
   format            = "qcow2"
   disk_compression  = true
